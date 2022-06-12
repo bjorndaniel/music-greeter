@@ -10,6 +10,11 @@ public class Startup : FunctionsStartup
             cv.ContainerName = Environment.GetEnvironmentVariable("ConfigValues:ContainerName");
             cv.FaceApiKey = Environment.GetEnvironmentVariable("ConfigValues:FaceApiKey");
             cv.StorageAccountUrl = Environment.GetEnvironmentVariable("ConfigValues:StorageAccountUrl");
+            cv.StorageConnectionString = Environment.GetEnvironmentVariable("ConfigValues:StorageConnectionString");
+            cv.StorageAccountKey = Environment.GetEnvironmentVariable("ConfigValues:StorageAccountKey");
+            cv.StorageAccountName = Environment.GetEnvironmentVariable("ConfigValues:StorageAccountName");
+            cv.SpotifyClientId = Environment.GetEnvironmentVariable("ConfigValues:SpotifyClientId");
+            cv.SpotifyClientSecret = Environment.GetEnvironmentVariable("ConfigValues:SpotifyClientSecret");
         });
     }
 }
