@@ -1,47 +1,230 @@
 ﻿@page "/"
 @inject IJSRuntime JSRuntime
-@inject IConfiguration Configuration
+@inject HttpClient HttpClient
 
 <PageTitle>Music greeter</PageTitle>
 
-<div class="my-auto">
-    <h1 class="cover-heading">Setup your musical morning!@_values.SpotifyClientId</h1>
-    <p class="lead">Add your photo and favorite song to get started</p>
-    <canvas class="@(_hasImage ? "" : "d-none")" id="currentFrame" width="320" height="240"
-        style="background-color:#000" />
-    <video class="@(_hasImage ? "d-none" : "")" id="videoFeed" width="320" height="240" />
+<div class="my-auto container">
+    <div class="row">
+        <div class="col">
+            <h1 class="cover-heading">Setup your musical morning!</h1>
+            <p class="lead">Add your photo and favorite song to get started</p>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <canvas class="@(_hasImage ? "" : "d-none")" id="currentFrame" width="560" height="420"
+                    style="background-color:#000" />
+            <video class="@(_hasImage ? "d-none" : "")" id="videoFeed" width="560" height="420" />
+            <br />
+            @if (_hasImage)
+            {
+                <p class="lead">
+                    <button class="btn btn-lg btn-success" @onclick="Retake">Retake</button>
+                </p>
+            }
+            else
+            {
+                <p class="lead">
+                    <button class="btn btn-lg btn-success" @onclick="CaptureAsync">Take picture</button>
+                </p>
+            }
+        </div>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-10">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="">Your name:</span>
+                </div>
+                <input type="text" class="form-control" placeholder="First name" @bind="@_firstname">
+                <input type="text" class="form-control" placeholder="Last name" @bind="@_lastname">
+            </div>
+        </div>
+    </div>
     <br />
-    @if (_hasImage)
+
+    <div class="row justify-content-center">
+        <div class="col-10">
+            <div class="input-group">
+                <div class="input-group-prepend">
+                    <span class="input-group-text" id="">Search for:</span>
+                </div>
+                <input type="text" class="form-control" placeholder="Artist" @bind="@_artist">
+                <input type="text" class="form-control" placeholder="Song" @bind="@_song">
+                <div class="input-group-append">
+                    <button disabled="@_isDisabled" @onclick:preventDefault @onclick="SearchAsync" class="btn btn-success">Search Spotify</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <br />
+    @if (_isSearching)
     {
-        <p class="lead">
-            <button class="btn btn-lg btn-success" @onclick="RetakeAsync">Retake</button>
-        </p>
+        <div class="row">
+            <div class="col text-center ">
+                <br />
+                <div class="row css-load-parent-small css-load-scale">
+                    <div class="col text-center my-auto">
+                        <div class="cssload-loader-inner-small">
+                            <div class="cssload-cssload-loader-line-wrap-wrap">
+                                <div class="cssload-loader-line-wrap"></div>
+                            </div>
+                            <div class="cssload-cssload-loader-line-wrap-wrap">
+                                <div class="cssload-loader-line-wrap"></div>
+                            </div>
+                            <div class="cssload-cssload-loader-line-wrap-wrap">
+                                <div class="cssload-loader-line-wrap"></div>
+                            </div>
+                            <div class="cssload-cssload-loader-line-wrap-wrap">
+                                <div class="cssload-loader-line-wrap"></div>
+                            </div>
+                            <div class="cssload-cssload-loader-line-wrap-wrap">
+                                <div class="cssload-loader-line-wrap"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     }
     else
     {
-        <p class="lead">
-            <button class="btn btn-lg btn-success" @onclick="CaptureAsync">Take picture</button>
-        </p>
+        <div class="row justify-content-center result-table">
+            <div class="col">
+                <table class="table table-bordered table-dark">
+                    <thead>
+                        <tr>
+                            <th class="text-left" scope="col">Artist</th>
+                            <th class="text-left" scope="col">Album</th>
+                            <th class="text-left" scope="col">Song</th>
+                            <th class="text-left" scope="col"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                        @foreach (var track in _results)
+                        {
+                            <tr>
+                                <td class="text-left">@track.Artist</td>
+                                <td class="text-left">@track.Album</td>
+                                <td class="text-left">@track.Track</td>
+                                <td class="text-left">
+                                    @if (_selectedTrack?.Uri == track.Uri)
+                                    {
+                                        <span class="oi oi-circle-check"></span>
+                                    }
+                                    else
+                                    {
+                                        <span class="oi oi-plus" @onclick="@(() => SelectTrack(track))"></span>
+                                    }
+
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
     }
+    @if (_canUpload && !_isSearching)
+    {
+        <div class="row">
+            <div>
+                <button class="btn btn-lg btn-success" @onclick="@UploadInfoAsync">Upload information</button>
+            </div>
+        </div>
+        <br />
+    }
+    @if (_success)
+    {
+        <p class="lead alert alert-success">
+            Upload succeeded!
+        </p>
+
+    }
+
 </div>
 @code {
 
     private bool _hasImage = false;
     private ConfigValues _values = new();
+    private SpotifyResult? _selectedTrack;
+    private IEnumerable<SpotifyResult> _results = new List<SpotifyResult>();
+    private string _firstname = "";
+    private string _lastname = "";
+    private string _artist = "";
+    private string _song = "";
+    private bool _isDisabled => string.IsNullOrWhiteSpace(_artist) || string.IsNullOrWhiteSpace(_song);
+    private bool _isSearching;
+    private bool _canUpload => UploadCheck();
+    private byte[]? _image;
+    private bool _success;
 
     protected override async Task OnInitializedAsync()
     {
         await JSRuntime.InvokeVoidAsync("startVideo", "videoFeed");
-        Configuration.GetSection(nameof(ConfigValues)).Bind(_values);
+    }
+
+    [JSInvokable]
+    public void ProcessImage(string imageString)
+    {
+        _image = Convert.FromBase64String(imageString.Split(",")[1]);
     }
 
     private async Task CaptureAsync()
     {
-        _hasImage = await JSRuntime.InvokeAsync<bool>("getFrame", "videoFeed", "currentFrame");
+        _hasImage = await JSRuntime.InvokeAsync<bool>("getFrame", "videoFeed", "currentFrame", DotNetObjectReference.Create(this));
     }
 
-    private async Task RetakeAsync()
+    private void Retake()
     {
         _hasImage = false;
     }
+
+    private async Task SearchAsync()
+    {
+        _isSearching = true;
+        await Task.Delay(1500);
+        _results = await HttpClient
+            .GetFromJsonAsync<IEnumerable<SpotifyResult>>($"http://192.168.131.235:7071/api/searchspotify?query={_artist} {_song}")
+            ?? new List<SpotifyResult>();
+        _isSearching = false;
+    }
+
+    private void SelectTrack(SpotifyResult track)
+    {
+        _selectedTrack = track;
+    }
+
+    private async Task UploadInfoAsync()
+    {
+        _isSearching = true;
+        var file = new ByteArrayContent(_image!);
+        var content = new MultipartFormDataContent();
+        content.Add(file, "image", "image.jpg");
+        content.Add(new StringContent(_firstname), "firstname");
+        content.Add(new StringContent(_lastname), "lastname");
+        content.Add(new StringContent(_selectedTrack!.Uri), "spotifyurl");
+        await HttpClient.PostAsync("http://192.168.131.235:7071/api/upload", content);
+        _success = true;
+        _results = new List<SpotifyResult>();
+        _isSearching = false;
+        await Task.Delay(1500);
+        _success = false;
+        _firstname = string.Empty;
+        _lastname = string.Empty;
+        _artist = string.Empty;
+        _song = string.Empty;
+        _hasImage = false;
+        await InvokeAsync(StateHasChanged);
+
+    }
+
+    private bool UploadCheck() =>
+        _selectedTrack != null &&
+        !string.IsNullOrWhiteSpace(_firstname) &&
+        !string.IsNullOrWhiteSpace(_lastname) &&
+        _image != null;
+
 }

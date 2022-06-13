@@ -1,0 +1,24 @@
+﻿.input-group-text {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+.input-group-append > button {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+.divSearch{
+    padding-top: 0.2rem;
+}
+
+.result-table {
+    overflow-y: hidden;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+    -webkit-scrollbar-width: 0px;
+    -webkit-background: transparent;
+}
+
+.table-dark {
+    background-color: #333;
+    background-image: linear-gradient(#222, #555);
+}

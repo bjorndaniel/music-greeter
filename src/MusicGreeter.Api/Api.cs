@@ -1,6 +1,3 @@
-
-using System.Text.Json;
-
 namespace MusicGreeter.Api;
 public class Api
 {
@@ -13,9 +10,8 @@ public class Api
 
     [FunctionName("negotiate")]
     public SignalRConnectionInfo GetSignalRInfo(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequest req,
-        [SignalRConnectionInfo(HubName = "analyzis")] SignalRConnectionInfo connectionInfo) =>
-        connectionInfo;
+        [HttpTrigger(AuthorizationLevel.Anonymous, "post")] HttpRequest req, [SignalRConnectionInfo(HubName = "analyzis")] SignalRConnectionInfo connectionInfo) =>
+    connectionInfo;
 
     [FunctionName("upload")]
     public async Task<IActionResult> Upload(
@@ -85,4 +81,5 @@ public class Api
         var query = req.Query["query"];
         return await SpotifyConnector.SearchSong(query, _configValues);
     }
+
 }

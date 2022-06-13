@@ -14,11 +14,13 @@ function startVideo(src) {
     }
 }
 
-function getFrame(src, dest) {
+function getFrame(src, dest, dotNetHelper) {
     try {
         const video = document.getElementById(src);
         const canvas = document.getElementById(dest);
-        canvas.getContext('2d').drawImage(video, 0, 0, 320, 240);
+        canvas.getContext('2d').drawImage(video, 0, 0, 560, 420);
+        const dataUrl = canvas.toDataURL("image/jpeg");
+        dotNetHelper.invokeMethodAsync("ProcessImage", dataUrl);
     }
     catch {
         return false;

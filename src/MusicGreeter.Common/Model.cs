@@ -2,11 +2,20 @@
 public class Employee
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    [JsonPropertyName("image")]
     public byte[] Image { get; set; } = Array.Empty<byte>();
+    [JsonPropertyName("firstname")]
     public string FirstName { get; set; } = string.Empty;
+    [JsonPropertyName("lastname")]
     public string LastName { get; set; } = string.Empty;
+    [JsonPropertyName("spotifyurl")]
     public string SpotifyUrl { get; set; } = string.Empty;
     public string DisplayName => $"{FirstName} {LastName}";
+}
+
+public class AnalyzeMessage
+{
+    public AnalyzeResult? Result { get; set; }
 }
 
 public class AnalyzeResult

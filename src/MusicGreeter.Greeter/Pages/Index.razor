@@ -1,0 +1,31 @@
+﻿@page "/"
+
+<PageTitle>Music greeter</PageTitle>
+
+<div class="my-auto container">
+    <div class="row">
+        <div class="col">
+            <h1 class="cover-heading">Good morning @_name!</h1>
+        </div>
+    </div>
+</div>
+
+@code{
+    private string _name = string.Empty;
+    private HubConnection? _connection;
+    protected override async Task OnInitializedAsync()
+    {
+        _connection = new HubConnectionBuilder()
+        .WithUrl("http://localhost:7071/api")
+        .Build();   
+        _connection.On<AnalyzeMessage>("ImageAnalyzed", async (m) => await this.OnBroadcastMessage(m));
+        await _connection.StartAsync();
+    }
+
+    private async Task OnBroadcastMessage(AnalyzeMessage message)
+    {
+        Console.WriteLine("On broadcast");
+        _name = message?.Result?.Users.FirstOrDefault() ?? "unknown";
+        await InvokeAsync(StateHasChanged);
+    }
+}
